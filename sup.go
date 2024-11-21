@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -92,15 +93,25 @@ func checkEndpointHttps(endpoint string, tries int, ch chan<- CheckResult) {
 	for i := 0; i < tries; i++ {
 		resp, err := http.Get("https://" + endpoint)
 
+		if resp == nil {
+			continue
+		}
+
 		if err != nil {
 			// Error making the request, the endpoint is considered down
 			// fmt.Printf("Endpoint: %v Attempt %d: Error - %v\n", endpoint, i+1, err)
 			continue
 		}
 
-		// 403 = forbidden which means server is responding
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusForbidden {
-			// fmt.Printf("Endpoint: %v Attempt %d: Status Code - %d\n", endpoint, i+1, resp.StatusCode)
+		body, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if readErr != nil {
+			continue
+		}
+
+		// if zero response in body then the endpoint is considered down
+		if len(body) == 0 {
 			continue
 		}
 
