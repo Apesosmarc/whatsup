@@ -103,6 +103,7 @@ func checkEndpointHttps(endpoint string, tries int, ch chan<- CheckResult) {
 			continue
 		}
 
+		// further check to see if there is any response in the body
 		body, readErr := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
