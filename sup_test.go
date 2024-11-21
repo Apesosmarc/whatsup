@@ -32,6 +32,7 @@ func TestIsUp(t *testing.T) {
 
 // TestIsDown simply checks the response body of a url. This is a basic test to see that checking the body is a viable way of seeing whats down.
 func TestIsDown(t *testing.T) {
+	// sub in a url that is known to be down
 	resp, err := simpleHttp("http://svc2.fourdimsdev.io/")
 	if err == nil {
 		t.Fatalf("testIsDown failed: %v", err)
