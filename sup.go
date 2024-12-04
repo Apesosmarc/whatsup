@@ -91,33 +91,10 @@ func checkEndpointHttps(endpoint string, tries int, ch chan<- CheckResult) {
 	successfulAttempts := 0
 
 	for i := 0; i < tries; i++ {
-		resp, err := http.Get("https://" + endpoint)
-
-		if resp == nil {
+		up := IsResponseLive(http.Get("https://" + endpoint))
+		if !up {
 			continue
 		}
-
-		if err != nil {
-			// Error making the request, the endpoint is considered down
-			// fmt.Printf("Endpoint: %v Attempt %d: Error - %v\n", endpoint, i+1, err)
-			continue
-		}
-
-		// further check to see if there is any response in the body
-		body, readErr := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		if readErr != nil {
-			continue
-		}
-
-		// if zero response in body then the endpoint is considered down
-		if len(body) == 0 {
-			continue
-		}
-
-		// The endpoint is up
-		// fmt.Printf("Endpoint: %v Attempt %d: Success\n", endpoint, i+1)
 		successfulAttempts++
 	}
 
@@ -128,6 +105,30 @@ func checkEndpointHttps(endpoint string, tries int, ch chan<- CheckResult) {
 	}
 
 	ch <- CheckResult{endpoint, nil, true}
+}
+
+// IsResponseLive checks if the provided http response is live.
+// If there is an error, or empty body, the response is considered down.
+func IsResponseLive(resp *http.Response, err error) bool {
+	if err != nil {
+		return false
+	}
+
+	if resp == nil {
+		return false
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return false
+	}
+
+	if len(body) != 0 {
+		return true
+	}
+
+	return true
 }
 
 // checkEndpoint checks if the provided endpoint is up using either a native OS ping or https request depending on the provided value of https.
